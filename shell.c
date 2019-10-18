@@ -24,9 +24,9 @@ char *info[1024];
 
 int main(){
     char input[1024],*order,*location;
-    int i = 0;
     NAME();
     while(1){
+        int i = 0;
         path();
         memset(input,0,1024);
         memset(info,0,1024);
@@ -63,22 +63,23 @@ void aim(char *location){
 }
 
 int turn(char *getr){
-    if(strcasecmp(getr,"cd") == 0)
-        return 1;
-	else if(strcasecmp(getr,"exit") == 0)
-		exit(1);
-    else if(strcasecmp(getr,"ex") == 0)
-        return 2;
-    else if(strcasecmp(getr,"mygrep") == 0)
-        return 3;
-    else if(strcasecmp(getr,"time") == 0)
-        getTime();
-    else if(strcasecmp(getr,"help") == 0)
-        help();
-    else if(strcasecmp(info[1],"|") == 0)
+    if(strcasecmp(info[2],"|") == 0)
         return 4;
-    else
-        printf("Error: Invalid argument\n");
+    else{
+        if(strcasecmp(getr,"cd") == 0)
+            return 1;
+        else if(strcasecmp(getr,"exit") == 0)
+            exit(1);
+        else if(strcasecmp(getr,"ex") == 0)
+            return 2;
+        else if(strcasecmp(getr,"mygrep") == 0)
+            return 3;
+        else if(strcasecmp(getr,"time") == 0)
+            getTime();
+        else if(strcasecmp(getr,"help") == 0)
+            help();
+        else
+            printf("Error: Invalid argument\n");
 }
 
 void program(){
@@ -155,23 +156,21 @@ void help(){
 }
 
 void pipixia(){
+    pid_t pid1,pid2;
     int status;
     int fd[2];
-    char *buf[100];
-    pid_t pid1,pid2;
-    if (pipe(fd) < 0)
-    {
+    if(pipe(fd) < 0){
         printf("Unable to create pipe!\n");
     }
     pid1 = fork();
     if(pid1 == 0){
         close(fd[0]);
         dup2(fd[1],STDOUT_FILENO);
-        if(execvp(info[0],info)==-1)
+        if(execvp(info[1],info)==-1)
             perror("Error");
         exit(EXIT_FAILURE);
     }
-    if(pid1 < 0)
+    else if(pid1 < 0)
         perror("Failure");
     else{
         do{
@@ -179,17 +178,15 @@ void pipixia(){
         }
         while(!WIFEXITED(status) && !WIFSIGNALED(status));
     }
+    close(fd[1]);
     pid2 = fork();
     if(pid2 == 0){
-        close(fd[1]);
         dup2(fd[0],STDIN_FILENO);
-        memset(buf,0,sizeof(buf));
-        read(fd[0],buf[0],sizeof(buf));
-        if(execvp(info[2],buf) == -1)
+        if(execvp(info[4],NULL)==-1)
             perror("Error");
         exit(EXIT_FAILURE);
     }
-    if(pid2 < 0)
+    else if(pid2 < 0)
         perror("Failure");
     else{
         do{
