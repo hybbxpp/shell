@@ -3,16 +3,22 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
-//#include <sys/wait.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <time.h>
+
+
 void NAME();
 void path();
 void aim(char get[1024]);
 int turn(char *getr);
 void mid(int get);
-//void program();
+void program();
 void grep_function();
+void getTime();
+void help();
+void pipixia();
 
 char *info[1024];
 
@@ -23,6 +29,7 @@ int main(){
     while(1){
         path();
         memset(input,0,1024);
+        memset(info,0,1024);
         fgets(input,1024,stdin);
         input[strlen(input)-1]=0;
         info[0] = strtok(input, " ");
@@ -64,17 +71,23 @@ int turn(char *getr){
         return 2;
     else if(strcasecmp(getr,"mygrep") == 0)
         return 3;
+    else if(strcasecmp(getr,"time") == 0)
+        getTime();
+    else if(strcasecmp(getr,"help") == 0)
+        help();
+    else if(strcasecmp(info[1],"|") == 0)
+        return 4;
     else
         printf("Error: Invalid argument\n");
 }
 
-/*void program(){
+void program(){
     pid_t pid;
     int status;
     pid = fork();
     if(pid == 0){
         if(execvp(info[1],info)==-1)
-            perror("error");
+            perror("Error");
         exit(EXIT_FAILURE);
     }
     else if(pid < 0)
@@ -85,13 +98,14 @@ int turn(char *getr){
         }
         while(!WIFEXITED(status) && !WIFSIGNALED(status));
     }
-}*/
+}
 
 void mid(int get){
     switch(get){
         case 1:aim(info[1]);break;
-        //case 2:program();break;
+        case 2:program();break;
         case 3:grep_function();break;
+        case 4:pipixia();break;
     }
 }
 
@@ -124,5 +138,63 @@ void grep_function(){
                 printf("%d\n",count);
             }
         }
+    }
+}
+
+void getTime(){
+    time_t t;
+    time(&t);
+    printf("%s",ctime(&t));
+}
+
+void help(){
+    printf("cd                   Change current directory\n");
+    printf("ex                   Run the program in the current directory\n");
+    printf("time                 Gets the current time and date");
+    printf("mypreg -c            Search for the number of keyword occurrences in a file in the current directory\n");
+}
+
+void pipixia(){
+    int status;
+    int fd[2];
+    char *buf[100];
+    pid_t pid1,pid2;
+    if (pipe(fd) < 0)
+    {
+        printf("Unable to create pipe!\n");
+    }
+    pid1 = fork();
+    if(pid1 == 0){
+        close(fd[0]);
+        dup2(fd[1],STDOUT_FILENO);
+        if(execvp(info[0],info)==-1)
+            perror("Error");
+        exit(EXIT_FAILURE);
+    }
+    if(pid1 < 0)
+        perror("Failure");
+    else{
+        do{
+            waitpid(pid1, &status, WUNTRACED);
+        }
+        while(!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+    pid2 = fork();
+    if(pid2 == 0){
+        close(fd[1]);
+        dup2(fd[0],STDIN_FILENO);
+        memset(buf,0,sizeof(buf));
+        read(fd[0],buf[0],sizeof(buf));
+        if(execvp(info[2],buf) == -1)
+            perror("Error");
+        exit(EXIT_FAILURE);
+    }
+    if(pid2 < 0)
+        perror("Failure");
+    else{
+        do{
+            waitpid(pid2, &status, WUNTRACED);
+        }
+        while(!WIFEXITED(status) && !WIFSIGNALED(status));
     }
 }
