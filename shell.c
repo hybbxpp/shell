@@ -79,7 +79,8 @@ int turn(char *getr){
         else if(strcasecmp(getr,"help") == 0)
             help();
         else
-            printf("Error: Invalid argument\n");
+            printf("Error2: Invalid argument\n");
+    }
 }
 
 void program(){
@@ -182,7 +183,7 @@ void pipixia(){
     pid2 = fork();
     if(pid2 == 0){
         dup2(fd[0],STDIN_FILENO);
-        if(execvp(info[4],NULL)==-1)
+        if(execvp(info[4],NULL) == -1)
             perror("Error");
         exit(EXIT_FAILURE);
     }
