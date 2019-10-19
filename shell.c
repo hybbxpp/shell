@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <fcntl.h>
 
 
 void NAME();
@@ -19,6 +20,7 @@ void grep_function();
 void getTime();
 void help();
 void pipixia();
+void re_direct();
 
 char *info[1024];
 
@@ -65,6 +67,8 @@ void aim(char *location){
 int turn(char *getr){
     if(strcasecmp(info[2],"|") == 0)
         return 4;
+    else if(strcasecmp(info[1],">") == 0)
+            return 5;
     else{
         if(strcasecmp(getr,"cd") == 0)
             return 1;
@@ -108,6 +112,7 @@ void mid(int get){
         case 2:program();break;
         case 3:grep_function();break;
         case 4:pipixia();break;
+        case 5:re_direct();break;
     }
 }
 
@@ -196,3 +201,34 @@ void pipixia(){
         while(!WIFEXITED(status) && !WIFSIGNALED(status));
     }
 }
+
+void re_direct(){
+	pid_t pid;
+    int fd[2],fp,status,size;
+    char buff[1024];
+    fp = open(info[2],O_RDWR|O_CREAT,0644);
+    if(pipe(fd) < 0){
+        printf("Unable to create pipe!\n");
+    }
+    pid = fork();
+    if(pid == 0){
+        close(fd[0]);
+        dup2(fd[1],STDOUT_FILENO);
+        if(execvp(info[0],info) == -1){
+            perror("Error");
+            exit(EXIT_FAILURE);
+        }
+    }
+    else if(pid < 0)
+        perror("Failure");
+    else{
+    	do{
+            waitpid(pid, &status, WUNTRACED);
+        }while(!WIFEXITED(status) && !WIFSIGNALED(status));
+            close(fd[1]);
+            read(fd[0],buff,1024);
+            size = strlen(buff);
+            write(fp,buff,size);
+    }
+}
+
